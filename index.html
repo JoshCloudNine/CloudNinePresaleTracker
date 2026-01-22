@@ -1151,19 +1151,25 @@
         }
 
         function loadData() {
+            // Save embedded targets and pricing (these should always take priority)
+            const embeddedTargets = JSON.parse(JSON.stringify(data.targets));
+            const embeddedPricing = JSON.parse(JSON.stringify(data.pricing));
+            const embeddedSiteNames = JSON.parse(JSON.stringify(data.siteNames));
+            const embeddedSiteStatus = JSON.parse(JSON.stringify(data.siteStatus));
+
             const saved = localStorage.getItem('cloudNineGymData');
             if (saved) {
                 const loaded = JSON.parse(saved);
-                data = { ...data, ...loaded };
-                // Ensure pricing exists
-                if (!data.pricing) {
-                    data.pricing = {
-                        site1: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
-                        site2: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
-                        site3: { bronze: 0, silver: 0, gold: 0, platinum: 0 }
-                    };
-                }
+                // Only load waitlist and presale data from localStorage
+                if (loaded.waitlist) data.waitlist = loaded.waitlist;
+                if (loaded.presale) data.presale = loaded.presale;
             }
+
+            // Always use embedded values for targets, pricing, names, and status
+            data.targets = embeddedTargets;
+            data.pricing = embeddedPricing;
+            data.siteNames = embeddedSiteNames;
+            data.siteStatus = embeddedSiteStatus;
 
             // Merge historic waitlist data (avoiding duplicates)
             mergeHistoricData();
