@@ -1,0 +1,2139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Nine Gym - Membership Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .tab.active {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .metric-card.highlight {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.5);
+        }
+
+        .metric-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .metric-value.currency::before {
+            content: '£';
+            font-size: 24px;
+            opacity: 0.8;
+        }
+
+        .metric-subtext {
+            font-size: 13px;
+            margin-top: 8px;
+            opacity: 0.8;
+        }
+
+        .metric-positive {
+            color: #4ade80;
+        }
+
+        .metric-negative {
+            color: #f87171;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22d3ee);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .data-entry {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+
+        .data-entry h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group select option {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .form-group.small input {
+            min-width: 80px;
+            width: 80px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .table-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow-x: auto;
+        }
+
+        .table-container h3 {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .site-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .site-1, .site1 { background: #22c55e; }
+        .site-2, .site2 { background: #8b5cf6; }
+        .site-3, .site3 { background: #ec4899; }
+
+        .comparison-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .comparison-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .site-name {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .site-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .settings-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .settings-section h3 {
+            margin-bottom: 20px;
+        }
+
+        .target-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .target-group {
+            background: rgba(0,0,0,0.2);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .target-group h4 {
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #f87171;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            color: #ef4444;
+        }
+
+        .export-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tier-colors {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tier-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .tier-bronze { background: #cd7f32; }
+        .tier-silver { background: #c0c0c0; color: #333; }
+        .tier-gold { background: #ffd700; color: #333; }
+        .tier-platinum { background: linear-gradient(135deg, #e5e4e2, #a8a9ad); color: #333; }
+
+        .membership-inputs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .membership-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .membership-input-group label {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .membership-input-group input {
+            width: 70px;
+            padding: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .form-group input, .form-group select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">☁️</div>
+            Cloud Nine Gym
+        </div>
+        <div class="header-date" id="currentDate"></div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab" onclick="switchTab('waitlist')">Waitlist Tracking</button>
+            <button class="tab" onclick="switchTab('presale')">Presale Tracking</button>
+            <button class="tab" onclick="switchTab('comparison')">Site Comparison</button>
+            <button class="tab" onclick="switchTab('settings')">Settings & Targets</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="metrics-grid" id="dashboardMetrics"></div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">All Sites - Waitlist Sign-ups Over Time</div>
+                    <div class="chart-container">
+                        <canvas id="dashboardWaitlistChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">All Sites - Presale Memberships Over Time</div>
+                    <div class="chart-container">
+                        <canvas id="dashboardPresaleChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">All Sites - Average Yield Trend</div>
+                    <div class="chart-container">
+                        <canvas id="dashboardYieldChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waitlist Tab -->
+        <div id="waitlist" class="tab-content">
+            <div class="data-entry">
+                <h3>📝 Add Daily Waitlist Data</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="waitlistDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Site</label>
+                        <select id="waitlistSite">
+                            <option value="site1">Site 1 (Reference)</option>
+                            <option value="site2">Site 2</option>
+                            <option value="site3">Site 3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sign-ups (Yesterday)</label>
+                        <input type="number" id="waitlistCount" min="0" placeholder="0">
+                    </div>
+                    <button class="btn btn-primary" onclick="addWaitlistEntry()">Add Entry</button>
+                </div>
+            </div>
+
+            <div class="metrics-grid" id="waitlistMetrics"></div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Daily Waitlist Sign-ups</div>
+                    <div class="chart-container">
+                        <canvas id="waitlistDailyChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Cumulative Waitlist Growth</div>
+                    <div class="chart-container">
+                        <canvas id="waitlistCumulativeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3>Waitlist Data Log</h3>
+                <table id="waitlistTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Site</th>
+                            <th>Daily Sign-ups</th>
+                            <th>Cumulative Total</th>
+                            <th>7-Day Avg</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Presale Tab -->
+        <div id="presale" class="tab-content">
+            <div class="data-entry">
+                <h3>💳 Add Daily Presale Data</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="presaleDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Site</label>
+                        <select id="presaleSite" onchange="updatePresalePriceHints()">
+                            <option value="site1">Site 1 (Reference)</option>
+                            <option value="site2">Site 2</option>
+                            <option value="site3">Site 3</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="membership-inputs" id="membershipInputs">
+                    <div class="membership-input-group">
+                        <label>🥉 Bronze <span id="price-bronze"></span></label>
+                        <input type="number" id="presaleBronze" min="0" placeholder="0">
+                    </div>
+                    <div class="membership-input-group">
+                        <label>🥈 Silver <span id="price-silver"></span></label>
+                        <input type="number" id="presaleSilver" min="0" placeholder="0">
+                    </div>
+                    <div class="membership-input-group">
+                        <label>🥇 Gold <span id="price-gold"></span></label>
+                        <input type="number" id="presaleGold" min="0" placeholder="0">
+                    </div>
+                    <div class="membership-input-group">
+                        <label>💎 Platinum <span id="price-platinum"></span></label>
+                        <input type="number" id="presalePlatinum" min="0" placeholder="0">
+                    </div>
+                    <button class="btn btn-primary" onclick="addPresaleEntry()" style="align-self:flex-end;">Add Entry</button>
+                </div>
+            </div>
+
+            <div class="metrics-grid" id="presaleMetrics"></div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Daily Presale Memberships</div>
+                    <div class="chart-container">
+                        <canvas id="presaleDailyChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Cumulative Presale Growth</div>
+                    <div class="chart-container">
+                        <canvas id="presaleCumulativeChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Daily Revenue (£)</div>
+                    <div class="chart-container">
+                        <canvas id="presaleRevenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Average Yield Over Time (£)</div>
+                    <div class="chart-container">
+                        <canvas id="presaleYieldChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3>Presale Data Log</h3>
+                <table id="presaleTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Site</th>
+                            <th>Bronze</th>
+                            <th>Silver</th>
+                            <th>Gold</th>
+                            <th>Platinum</th>
+                            <th>Total</th>
+                            <th>Revenue</th>
+                            <th>Avg Yield</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Comparison Tab -->
+        <div id="comparison" class="tab-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Select Comparison Metric</div>
+                    <select id="comparisonMetric" onchange="updateComparison()" style="width:100%; margin-top:10px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white;">
+                        <option value="waitlist">Waitlist Sign-ups</option>
+                        <option value="presale">Presale Memberships</option>
+                        <option value="revenue">Presale Revenue (£)</option>
+                        <option value="yield">Average Yield (£)</option>
+                    </select>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Compare At Day</div>
+                    <input type="number" id="comparisonDay" value="30" min="1" onchange="updateComparison()" style="width:100%; margin-top:10px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white;">
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card" style="grid-column: 1 / -1;">
+                    <div class="chart-title">Site Comparison - Day-by-Day Progress</div>
+                    <div class="chart-container">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comparison-card">
+                <h3 style="margin-bottom:20px;">Site Performance at Day <span id="comparisonDayLabel">30</span></h3>
+                <div id="comparisonStats"></div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="settings-section">
+                <h3>💷 Membership Pricing (Per Site)</h3>
+                <p style="opacity:0.7;margin-bottom:20px;font-size:14px;">Set the monthly price for each membership tier at each site. These prices are used to calculate revenue and average yield.</p>
+                <div class="target-inputs" id="pricingInputs"></div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🎯 Set Targets</h3>
+                <div class="target-inputs">
+                    <div class="target-group">
+                        <h4>Site 1 (Reference)</h4>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Waitlist Target</label>
+                            <input type="number" id="target-site1-waitlist" onchange="saveTargets()" placeholder="e.g., 500">
+                        </div>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Presale Target (Members)</label>
+                            <input type="number" id="target-site1-presale" onchange="saveTargets()" placeholder="e.g., 300">
+                        </div>
+                        <div class="form-group">
+                            <label>Yield Target (£)</label>
+                            <input type="number" id="target-site1-yield" onchange="saveTargets()" placeholder="e.g., 35" step="0.01">
+                        </div>
+                    </div>
+                    <div class="target-group">
+                        <h4>Site 2</h4>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Waitlist Target</label>
+                            <input type="number" id="target-site2-waitlist" onchange="saveTargets()" placeholder="e.g., 500">
+                        </div>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Presale Target (Members)</label>
+                            <input type="number" id="target-site2-presale" onchange="saveTargets()" placeholder="e.g., 300">
+                        </div>
+                        <div class="form-group">
+                            <label>Yield Target (£)</label>
+                            <input type="number" id="target-site2-yield" onchange="saveTargets()" placeholder="e.g., 35" step="0.01">
+                        </div>
+                    </div>
+                    <div class="target-group">
+                        <h4>Site 3</h4>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Waitlist Target</label>
+                            <input type="number" id="target-site3-waitlist" onchange="saveTargets()" placeholder="e.g., 500">
+                        </div>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Presale Target (Members)</label>
+                            <input type="number" id="target-site3-presale" onchange="saveTargets()" placeholder="e.g., 300">
+                        </div>
+                        <div class="form-group">
+                            <label>Yield Target (£)</label>
+                            <input type="number" id="target-site3-yield" onchange="saveTargets()" placeholder="e.g., 35" step="0.01">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🏢 Site Configuration</h3>
+                <div class="target-inputs">
+                    <div class="target-group">
+                        <h4>Site 1</h4>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Site Name</label>
+                            <input type="text" id="name-site1" onchange="saveSiteNames()" placeholder="e.g., Manchester">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="status-site1" onchange="saveSiteNames()">
+                                <option value="open">Open</option>
+                                <option value="preopening">Pre-opening</option>
+                                <option value="presale">Presale</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="target-group">
+                        <h4>Site 2</h4>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Site Name</label>
+                            <input type="text" id="name-site2" onchange="saveSiteNames()" placeholder="e.g., Leeds">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="status-site2" onchange="saveSiteNames()">
+                                <option value="open">Open</option>
+                                <option value="preopening" selected>Pre-opening</option>
+                                <option value="presale">Presale</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="target-group">
+                        <h4>Site 3</h4>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label>Site Name</label>
+                            <input type="text" id="name-site3" onchange="saveSiteNames()" placeholder="e.g., Birmingham">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="status-site3" onchange="saveSiteNames()">
+                                <option value="open">Open</option>
+                                <option value="preopening" selected>Pre-opening</option>
+                                <option value="presale">Presale</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>📤 Export / Import Data</h3>
+                <div class="export-btns">
+                    <button class="btn btn-primary" onclick="exportData()">Export All Data (JSON)</button>
+                    <button class="btn btn-secondary" onclick="exportCSV()">Export to CSV</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+                    <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Membership tiers
+        const tiers = ['bronze', 'silver', 'gold', 'platinum'];
+
+        // Historic waitlist data (imported from Excel)
+        const historicWaitlistData = [
+            {"date": "2025-04-01", "site": "site1", "count": 284},
+            {"date": "2025-04-02", "site": "site1", "count": 15},
+            {"date": "2025-04-03", "site": "site1", "count": 3},
+            {"date": "2025-04-04", "site": "site1", "count": 18},
+            {"date": "2025-04-05", "site": "site1", "count": 34},
+            {"date": "2025-04-06", "site": "site1", "count": 62},
+            {"date": "2025-04-07", "site": "site1", "count": 47},
+            {"date": "2025-04-08", "site": "site1", "count": 59},
+            {"date": "2025-04-09", "site": "site1", "count": 35},
+            {"date": "2025-04-10", "site": "site1", "count": 41},
+            {"date": "2025-04-11", "site": "site1", "count": 31},
+            {"date": "2025-04-12", "site": "site1", "count": 34},
+            {"date": "2025-04-13", "site": "site1", "count": 35},
+            {"date": "2025-04-14", "site": "site1", "count": 33},
+            {"date": "2025-04-15", "site": "site1", "count": 36},
+            {"date": "2025-04-16", "site": "site1", "count": 36},
+            {"date": "2025-04-17", "site": "site1", "count": 23},
+            {"date": "2025-04-18", "site": "site1", "count": 23},
+            {"date": "2025-04-19", "site": "site1", "count": 26},
+            {"date": "2025-04-20", "site": "site1", "count": 25},
+            {"date": "2025-04-21", "site": "site1", "count": 42},
+            {"date": "2025-04-22", "site": "site1", "count": 23},
+            {"date": "2025-04-23", "site": "site1", "count": 30},
+            {"date": "2025-04-24", "site": "site1", "count": 30},
+            {"date": "2025-04-25", "site": "site1", "count": 14},
+            {"date": "2025-04-26", "site": "site1", "count": 17},
+            {"date": "2025-04-27", "site": "site1", "count": 28},
+            {"date": "2025-04-28", "site": "site1", "count": 19},
+            {"date": "2025-04-29", "site": "site1", "count": 17},
+            {"date": "2025-04-30", "site": "site1", "count": 20},
+            {"date": "2025-05-01", "site": "site1", "count": 15},
+            {"date": "2025-05-02", "site": "site1", "count": 16},
+            {"date": "2025-05-03", "site": "site1", "count": 20},
+            {"date": "2025-05-04", "site": "site1", "count": 23},
+            {"date": "2025-05-05", "site": "site1", "count": 28},
+            {"date": "2025-05-06", "site": "site1", "count": 16},
+            {"date": "2025-05-07", "site": "site1", "count": 15},
+            {"date": "2025-05-08", "site": "site1", "count": 10},
+            {"date": "2025-05-09", "site": "site1", "count": 22},
+            {"date": "2025-05-10", "site": "site1", "count": 13},
+            {"date": "2025-05-11", "site": "site1", "count": 20},
+            {"date": "2025-05-12", "site": "site1", "count": 13},
+            {"date": "2025-05-13", "site": "site1", "count": 27},
+            {"date": "2025-05-14", "site": "site1", "count": 13},
+            {"date": "2025-05-15", "site": "site1", "count": 16},
+            {"date": "2025-05-16", "site": "site1", "count": 20},
+            {"date": "2025-05-17", "site": "site1", "count": 12},
+            {"date": "2025-05-18", "site": "site1", "count": 24},
+            {"date": "2025-05-19", "site": "site1", "count": 8},
+            {"date": "2025-05-20", "site": "site1", "count": 20},
+            {"date": "2025-05-21", "site": "site1", "count": 21},
+            {"date": "2025-05-22", "site": "site1", "count": 59},
+            {"date": "2025-05-23", "site": "site1", "count": 34},
+            {"date": "2025-05-24", "site": "site1", "count": 31},
+            {"date": "2025-05-25", "site": "site1", "count": 24},
+            {"date": "2025-05-26", "site": "site1", "count": 26},
+            {"date": "2025-05-27", "site": "site1", "count": 28},
+            {"date": "2025-05-28", "site": "site1", "count": 16},
+            {"date": "2025-05-29", "site": "site1", "count": 21},
+            {"date": "2025-05-30", "site": "site1", "count": 16},
+            {"date": "2025-05-31", "site": "site1", "count": 22},
+            {"date": "2025-06-01", "site": "site1", "count": 19},
+            {"date": "2025-06-02", "site": "site1", "count": 21},
+            {"date": "2025-06-03", "site": "site1", "count": 22},
+            {"date": "2025-06-04", "site": "site1", "count": 18},
+            {"date": "2025-06-05", "site": "site1", "count": 21},
+            {"date": "2025-06-06", "site": "site1", "count": 22},
+            {"date": "2025-06-07", "site": "site1", "count": 20},
+            {"date": "2025-06-08", "site": "site1", "count": 26},
+            {"date": "2025-06-09", "site": "site1", "count": 14},
+            {"date": "2025-06-10", "site": "site1", "count": 21},
+            {"date": "2025-06-11", "site": "site1", "count": 21},
+            {"date": "2025-06-12", "site": "site1", "count": 19},
+            {"date": "2025-06-13", "site": "site1", "count": 18},
+            {"date": "2025-06-14", "site": "site1", "count": 14},
+            {"date": "2025-06-15", "site": "site1", "count": 20},
+            {"date": "2025-06-16", "site": "site1", "count": 11},
+            {"date": "2025-06-17", "site": "site1", "count": 16},
+            {"date": "2025-06-18", "site": "site1", "count": 14},
+            {"date": "2025-06-19", "site": "site1", "count": 11},
+            {"date": "2025-06-20", "site": "site1", "count": 13},
+            {"date": "2025-06-21", "site": "site1", "count": 23},
+            {"date": "2025-06-22", "site": "site1", "count": 22},
+            {"date": "2025-06-23", "site": "site1", "count": 12},
+            {"date": "2025-06-24", "site": "site1", "count": 71},
+            {"date": "2025-06-25", "site": "site1", "count": 19},
+            {"date": "2025-12-04", "site": "site2", "count": 24},
+            {"date": "2025-12-05", "site": "site2", "count": 60},
+            {"date": "2025-12-06", "site": "site2", "count": 33},
+            {"date": "2025-12-07", "site": "site2", "count": 33},
+            {"date": "2025-12-08", "site": "site2", "count": 39},
+            {"date": "2025-12-09", "site": "site2", "count": 35},
+            {"date": "2025-12-10", "site": "site2", "count": 32},
+            {"date": "2025-12-11", "site": "site2", "count": 27},
+            {"date": "2025-12-12", "site": "site2", "count": 29},
+            {"date": "2025-12-13", "site": "site2", "count": 14},
+            {"date": "2025-12-14", "site": "site2", "count": 34},
+            {"date": "2025-12-15", "site": "site2", "count": 15},
+            {"date": "2025-12-16", "site": "site2", "count": 32},
+            {"date": "2025-12-17", "site": "site2", "count": 22},
+            {"date": "2025-12-18", "site": "site2", "count": 10},
+            {"date": "2025-12-19", "site": "site2", "count": 18},
+            {"date": "2025-12-20", "site": "site2", "count": 19},
+            {"date": "2025-12-21", "site": "site2", "count": 14},
+            {"date": "2025-12-22", "site": "site2", "count": 9},
+            {"date": "2025-12-23", "site": "site2", "count": 2},
+            {"date": "2025-12-25", "site": "site2", "count": 2},
+            {"date": "2025-12-26", "site": "site2", "count": 43},
+            {"date": "2025-12-27", "site": "site2", "count": 53},
+            {"date": "2025-12-28", "site": "site2", "count": 21},
+            {"date": "2025-12-29", "site": "site2", "count": 32},
+            {"date": "2025-12-30", "site": "site2", "count": 37},
+            {"date": "2025-12-31", "site": "site2", "count": 30},
+            {"date": "2026-01-01", "site": "site2", "count": 36},
+            {"date": "2026-01-02", "site": "site2", "count": 35},
+            {"date": "2026-01-03", "site": "site2", "count": 31},
+            {"date": "2026-01-04", "site": "site2", "count": 37},
+            {"date": "2026-01-05", "site": "site2", "count": 42},
+            {"date": "2026-01-06", "site": "site2", "count": 39},
+            {"date": "2026-01-07", "site": "site2", "count": 41},
+            {"date": "2026-01-08", "site": "site2", "count": 29},
+            {"date": "2026-01-09", "site": "site2", "count": 48},
+            {"date": "2026-01-10", "site": "site2", "count": 35},
+            {"date": "2026-01-11", "site": "site2", "count": 27},
+            {"date": "2026-01-12", "site": "site2", "count": 47},
+            {"date": "2026-01-13", "site": "site2", "count": 74},
+            {"date": "2026-01-14", "site": "site2", "count": 58},
+            {"date": "2026-01-15", "site": "site2", "count": 62},
+            {"date": "2026-01-16", "site": "site2", "count": 56},
+            {"date": "2026-01-16", "site": "site3", "count": 19},
+            {"date": "2026-01-17", "site": "site2", "count": 51},
+            {"date": "2026-01-17", "site": "site3", "count": 67},
+            {"date": "2026-01-18", "site": "site2", "count": 86},
+            {"date": "2026-01-18", "site": "site3", "count": 133},
+            {"date": "2026-01-19", "site": "site2", "count": 64},
+            {"date": "2026-01-19", "site": "site3", "count": 98},
+            {"date": "2026-01-20", "site": "site2", "count": 77},
+            {"date": "2026-01-20", "site": "site3", "count": 96},
+            {"date": "2026-01-21", "site": "site2", "count": 47},
+            {"date": "2026-01-21", "site": "site3", "count": 61},
+            {"date": "2026-01-22", "site": "site3", "count": 55}
+        ];
+
+        // Historic presale data (imported from Excel - Tonbridge)
+        // Tier breakdown: 173 platinum, 172 gold, 171 bronze, 169 silver = 685 total
+        const historicPresaleData = [
+            {"date": "2025-06-26", "site": "site1", "bronze": 48, "silver": 47, "gold": 48, "platinum": 48},
+            {"date": "2025-06-27", "site": "site1", "bronze": 14, "silver": 14, "gold": 14, "platinum": 14},
+            {"date": "2025-06-28", "site": "site1", "bronze": 5, "silver": 4, "gold": 5, "platinum": 4},
+            {"date": "2025-06-29", "site": "site1", "bronze": 3, "silver": 3, "gold": 4, "platinum": 3},
+            {"date": "2025-06-30", "site": "site1", "bronze": 3, "silver": 3, "gold": 3, "platinum": 3},
+            {"date": "2025-07-01", "site": "site1", "bronze": 2, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-07-02", "site": "site1", "bronze": 1, "silver": 1, "gold": 0, "platinum": 1},
+            {"date": "2025-07-03", "site": "site1", "bronze": 2, "silver": 2, "gold": 1, "platinum": 2},
+            {"date": "2025-07-04", "site": "site1", "bronze": 3, "silver": 3, "gold": 3, "platinum": 2},
+            {"date": "2025-07-05", "site": "site1", "bronze": 3, "silver": 3, "gold": 3, "platinum": 3},
+            {"date": "2025-07-06", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1},
+            {"date": "2025-07-07", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-07-08", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 2},
+            {"date": "2025-07-09", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 2},
+            {"date": "2025-07-10", "site": "site1", "bronze": 1, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-07-11", "site": "site1", "bronze": 3, "silver": 3, "gold": 3, "platinum": 3},
+            {"date": "2025-07-12", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-07-13", "site": "site1", "bronze": 0, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-07-14", "site": "site1", "bronze": 2, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-07-15", "site": "site1", "bronze": 3, "silver": 2, "gold": 3, "platinum": 2},
+            {"date": "2025-07-16", "site": "site1", "bronze": 2, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-07-17", "site": "site1", "bronze": 2, "silver": 2, "gold": 3, "platinum": 2},
+            {"date": "2025-07-18", "site": "site1", "bronze": 2, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-07-19", "site": "site1", "bronze": 1, "silver": 1, "gold": 0, "platinum": 1},
+            {"date": "2025-07-20", "site": "site1", "bronze": 3, "silver": 2, "gold": 3, "platinum": 2},
+            {"date": "2025-07-21", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 2},
+            {"date": "2025-07-22", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 2},
+            {"date": "2025-07-23", "site": "site1", "bronze": 2, "silver": 2, "gold": 3, "platinum": 2},
+            {"date": "2025-07-24", "site": "site1", "bronze": 1, "silver": 1, "gold": 0, "platinum": 1},
+            {"date": "2025-07-25", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-07-26", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1},
+            {"date": "2025-07-27", "site": "site1", "bronze": 2, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-07-28", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 2},
+            {"date": "2025-07-29", "site": "site1", "bronze": 1, "silver": 1, "gold": 0, "platinum": 1},
+            {"date": "2025-07-30", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1},
+            {"date": "2025-07-31", "site": "site1", "bronze": 1, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-08-01", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-08-02", "site": "site1", "bronze": 1, "silver": 1, "gold": 0, "platinum": 1},
+            {"date": "2025-08-03", "site": "site1", "bronze": 1, "silver": 1, "gold": 0, "platinum": 1},
+            {"date": "2025-08-04", "site": "site1", "bronze": 0, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-08-05", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1},
+            {"date": "2025-08-06", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-08-07", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 2},
+            {"date": "2025-08-08", "site": "site1", "bronze": 1, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-08-09", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-08-10", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1},
+            {"date": "2025-08-11", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-08-12", "site": "site1", "bronze": 1, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-08-13", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 0},
+            {"date": "2025-08-15", "site": "site1", "bronze": 2, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-08-16", "site": "site1", "bronze": 1, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-08-17", "site": "site1", "bronze": 0, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-08-18", "site": "site1", "bronze": 1, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-08-19", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-08-20", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1},
+            {"date": "2025-08-21", "site": "site1", "bronze": 2, "silver": 2, "gold": 3, "platinum": 2},
+            {"date": "2025-08-22", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 0},
+            {"date": "2025-08-23", "site": "site1", "bronze": 1, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-08-24", "site": "site1", "bronze": 1, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-08-25", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-08-26", "site": "site1", "bronze": 1, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-08-27", "site": "site1", "bronze": 0, "silver": 0, "gold": 0, "platinum": 0},
+            {"date": "2025-08-28", "site": "site1", "bronze": 2, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-08-29", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-08-31", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1},
+            {"date": "2025-09-01", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1},
+            {"date": "2025-09-02", "site": "site1", "bronze": 0, "silver": 0, "gold": 0, "platinum": 0},
+            {"date": "2025-09-03", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 0},
+            {"date": "2025-09-04", "site": "site1", "bronze": 0, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-09-05", "site": "site1", "bronze": 0, "silver": -1, "gold": 0, "platinum": 0},
+            {"date": "2025-09-06", "site": "site1", "bronze": 0, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-09-07", "site": "site1", "bronze": 0, "silver": 0, "gold": 0, "platinum": 0},
+            {"date": "2025-09-08", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 1},
+            {"date": "2025-09-09", "site": "site1", "bronze": -1, "silver": -1, "gold": 0, "platinum": 0},
+            {"date": "2025-09-10", "site": "site1", "bronze": 0, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-09-11", "site": "site1", "bronze": 0, "silver": 0, "gold": 0, "platinum": 0},
+            {"date": "2025-09-12", "site": "site1", "bronze": 1, "silver": 1, "gold": 2, "platinum": 0},
+            {"date": "2025-09-13", "site": "site1", "bronze": 0, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-09-14", "site": "site1", "bronze": 0, "silver": 0, "gold": 0, "platinum": 0},
+            {"date": "2025-09-15", "site": "site1", "bronze": 1, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-09-16", "site": "site1", "bronze": 2, "silver": 2, "gold": 2, "platinum": 0},
+            {"date": "2025-09-17", "site": "site1", "bronze": 1, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-09-18", "site": "site1", "bronze": 1, "silver": 0, "gold": 1, "platinum": 0},
+            {"date": "2025-09-19", "site": "site1", "bronze": 3, "silver": 3, "gold": 3, "platinum": 2},
+            {"date": "2025-09-20", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 0},
+            {"date": "2025-09-21", "site": "site1", "bronze": 2, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-09-22", "site": "site1", "bronze": 1, "silver": 1, "gold": 2, "platinum": 1},
+            {"date": "2025-09-23", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 0},
+            {"date": "2025-09-24", "site": "site1", "bronze": -2, "silver": -1, "gold": -1, "platinum": -1},
+            {"date": "2025-09-25", "site": "site1", "bronze": 1, "silver": 1, "gold": 1, "platinum": 1}
+        ];
+
+        // Data storage
+        let data = {
+            waitlist: [],
+            presale: [],
+            targets: {
+                site1: { waitlist: 0, presale: 0, yield: 0 },
+                site2: { waitlist: 0, presale: 0, yield: 0 },
+                site3: { waitlist: 0, presale: 0, yield: 0 }
+            },
+            siteNames: {
+                site1: 'Tonbridge',
+                site2: 'Bromley',
+                site3: 'Bethnal Green'
+            },
+            siteStatus: {
+                site1: 'open',
+                site2: 'preopening',
+                site3: 'preopening'
+            },
+            pricing: {
+                site1: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
+                site2: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
+                site3: { bronze: 0, silver: 0, gold: 0, platinum: 0 }
+            }
+        };
+
+        // Chart instances
+        let charts = {};
+
+        // Site colors
+        const siteColors = {
+            site1: { bg: 'rgba(34, 197, 94, 0.2)', border: '#22c55e' },
+            site2: { bg: 'rgba(139, 92, 246, 0.2)', border: '#8b5cf6' },
+            site3: { bg: 'rgba(236, 72, 153, 0.2)', border: '#ec4899' }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            setDefaultDates();
+            updateCurrentDate();
+            renderPricingInputs();
+            loadTargets();
+            loadSiteNames();
+            loadPricing();
+            updatePresalePriceHints();
+            renderAll();
+        });
+
+        function setDefaultDates() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const dateStr = yesterday.toISOString().split('T')[0];
+            document.getElementById('waitlistDate').value = dateStr;
+            document.getElementById('presaleDate').value = dateStr;
+        }
+
+        function updateCurrentDate() {
+            const now = new Date();
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-GB', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'comparison') {
+                updateComparison();
+            }
+            if (tabId === 'presale') {
+                updatePresalePriceHints();
+            }
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('cloudNineGymData');
+            if (saved) {
+                const loaded = JSON.parse(saved);
+                data = { ...data, ...loaded };
+                // Ensure pricing exists
+                if (!data.pricing) {
+                    data.pricing = {
+                        site1: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
+                        site2: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
+                        site3: { bronze: 0, silver: 0, gold: 0, platinum: 0 }
+                    };
+                }
+            }
+
+            // Merge historic waitlist data (avoiding duplicates)
+            mergeHistoricData();
+        }
+
+        function mergeHistoricData() {
+            let dataChanged = false;
+
+            // Merge waitlist data
+            const existingWaitlist = new Set(
+                data.waitlist.map(e => `${e.date}-${e.site}`)
+            );
+            historicWaitlistData.forEach(entry => {
+                const key = `${entry.date}-${entry.site}`;
+                if (!existingWaitlist.has(key)) {
+                    data.waitlist.push({ ...entry });
+                    existingWaitlist.add(key);
+                    dataChanged = true;
+                }
+            });
+
+            // Merge presale data
+            const existingPresale = new Set(
+                data.presale.map(e => `${e.date}-${e.site}`)
+            );
+            historicPresaleData.forEach(entry => {
+                const key = `${entry.date}-${entry.site}`;
+                if (!existingPresale.has(key)) {
+                    data.presale.push({ ...entry });
+                    existingPresale.add(key);
+                    dataChanged = true;
+                }
+            });
+
+            // Sort by date
+            if (dataChanged) {
+                data.waitlist.sort((a, b) => new Date(a.date) - new Date(b.date));
+                data.presale.sort((a, b) => new Date(a.date) - new Date(b.date));
+                saveData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('cloudNineGymData', JSON.stringify(data));
+        }
+
+        function renderPricingInputs() {
+            const container = document.getElementById('pricingInputs');
+            let html = '';
+
+            ['site1', 'site2', 'site3'].forEach(site => {
+                html += `
+                    <div class="target-group">
+                        <h4>${getSiteName(site)}</h4>
+                        <div class="pricing-grid">
+                            <div class="form-group">
+                                <label>🥉 Bronze (£)</label>
+                                <input type="number" id="price-${site}-bronze" onchange="savePricing()" placeholder="e.g., 19.99" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>🥈 Silver (£)</label>
+                                <input type="number" id="price-${site}-silver" onchange="savePricing()" placeholder="e.g., 29.99" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>🥇 Gold (£)</label>
+                                <input type="number" id="price-${site}-gold" onchange="savePricing()" placeholder="e.g., 39.99" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>💎 Platinum (£)</label>
+                                <input type="number" id="price-${site}-platinum" onchange="savePricing()" placeholder="e.g., 49.99" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function loadPricing() {
+            ['site1', 'site2', 'site3'].forEach(site => {
+                tiers.forEach(tier => {
+                    const el = document.getElementById(`price-${site}-${tier}`);
+                    if (el && data.pricing[site]) {
+                        el.value = data.pricing[site][tier] || '';
+                    }
+                });
+            });
+        }
+
+        function savePricing() {
+            ['site1', 'site2', 'site3'].forEach(site => {
+                if (!data.pricing[site]) data.pricing[site] = {};
+                tiers.forEach(tier => {
+                    const el = document.getElementById(`price-${site}-${tier}`);
+                    data.pricing[site][tier] = parseFloat(el?.value) || 0;
+                });
+            });
+            saveData();
+            updatePresalePriceHints();
+            renderAll();
+        }
+
+        function updatePresalePriceHints() {
+            const site = document.getElementById('presaleSite').value;
+            tiers.forEach(tier => {
+                const price = data.pricing[site]?.[tier] || 0;
+                const el = document.getElementById(`price-${tier}`);
+                if (el) {
+                    el.textContent = price > 0 ? `(£${price.toFixed(2)})` : '';
+                }
+            });
+        }
+
+        function loadTargets() {
+            ['site1', 'site2', 'site3'].forEach(site => {
+                const wl = document.getElementById(`target-${site}-waitlist`);
+                const ps = document.getElementById(`target-${site}-presale`);
+                const yl = document.getElementById(`target-${site}-yield`);
+                if (wl && data.targets[site]) wl.value = data.targets[site].waitlist || '';
+                if (ps && data.targets[site]) ps.value = data.targets[site].presale || '';
+                if (yl && data.targets[site]) yl.value = data.targets[site].yield || '';
+            });
+        }
+
+        function saveTargets() {
+            ['site1', 'site2', 'site3'].forEach(site => {
+                data.targets[site] = {
+                    waitlist: parseInt(document.getElementById(`target-${site}-waitlist`).value) || 0,
+                    presale: parseInt(document.getElementById(`target-${site}-presale`).value) || 0,
+                    yield: parseFloat(document.getElementById(`target-${site}-yield`).value) || 0
+                };
+            });
+            saveData();
+            renderAll();
+        }
+
+        function loadSiteNames() {
+            ['site1', 'site2', 'site3'].forEach(site => {
+                const nameEl = document.getElementById(`name-${site}`);
+                const statusEl = document.getElementById(`status-${site}`);
+                if (nameEl && data.siteNames[site]) nameEl.value = data.siteNames[site];
+                if (statusEl && data.siteStatus[site]) statusEl.value = data.siteStatus[site];
+            });
+        }
+
+        function saveSiteNames() {
+            ['site1', 'site2', 'site3'].forEach(site => {
+                data.siteNames[site] = document.getElementById(`name-${site}`).value || `Site ${site.slice(-1)}`;
+                data.siteStatus[site] = document.getElementById(`status-${site}`).value;
+            });
+            saveData();
+            renderPricingInputs();
+            loadPricing();
+            renderAll();
+        }
+
+        function getSiteName(siteId) {
+            return data.siteNames[siteId] || siteId;
+        }
+
+        function calculateRevenue(entry) {
+            const pricing = data.pricing[entry.site] || {};
+            return (entry.bronze || 0) * (pricing.bronze || 0) +
+                   (entry.silver || 0) * (pricing.silver || 0) +
+                   (entry.gold || 0) * (pricing.gold || 0) +
+                   (entry.platinum || 0) * (pricing.platinum || 0);
+        }
+
+        function getTotalMembers(entry) {
+            return (entry.bronze || 0) + (entry.silver || 0) + (entry.gold || 0) + (entry.platinum || 0);
+        }
+
+        function addWaitlistEntry() {
+            const date = document.getElementById('waitlistDate').value;
+            const site = document.getElementById('waitlistSite').value;
+            const count = parseInt(document.getElementById('waitlistCount').value) || 0;
+
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+
+            const existing = data.waitlist.findIndex(e => e.date === date && e.site === site);
+            if (existing >= 0) {
+                if (confirm('Entry for this date and site exists. Update it?')) {
+                    data.waitlist[existing].count = count;
+                } else {
+                    return;
+                }
+            } else {
+                data.waitlist.push({ date, site, count });
+            }
+
+            data.waitlist.sort((a, b) => new Date(a.date) - new Date(b.date));
+            saveData();
+            renderAll();
+            document.getElementById('waitlistCount').value = '';
+        }
+
+        function addPresaleEntry() {
+            const date = document.getElementById('presaleDate').value;
+            const site = document.getElementById('presaleSite').value;
+            const bronze = parseInt(document.getElementById('presaleBronze').value) || 0;
+            const silver = parseInt(document.getElementById('presaleSilver').value) || 0;
+            const gold = parseInt(document.getElementById('presaleGold').value) || 0;
+            const platinum = parseInt(document.getElementById('presalePlatinum').value) || 0;
+
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+
+            const entry = { date, site, bronze, silver, gold, platinum };
+
+            const existing = data.presale.findIndex(e => e.date === date && e.site === site);
+            if (existing >= 0) {
+                if (confirm('Entry for this date and site exists. Update it?')) {
+                    data.presale[existing] = entry;
+                } else {
+                    return;
+                }
+            } else {
+                data.presale.push(entry);
+            }
+
+            data.presale.sort((a, b) => new Date(a.date) - new Date(b.date));
+            saveData();
+            renderAll();
+
+            // Clear inputs
+            document.getElementById('presaleBronze').value = '';
+            document.getElementById('presaleSilver').value = '';
+            document.getElementById('presaleGold').value = '';
+            document.getElementById('presalePlatinum').value = '';
+        }
+
+        function deleteEntry(type, date, site) {
+            if (confirm('Delete this entry?')) {
+                data[type] = data[type].filter(e => !(e.date === date && e.site === site));
+                saveData();
+                renderAll();
+            }
+        }
+
+        function calculateWaitlistMetrics(site) {
+            const siteEntries = data.waitlist.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (siteEntries.length === 0) {
+                return { total: 0, dailyAvg: 0, last7DayAvg: 0, daysTracked: 0, trend: 0 };
+            }
+
+            const total = siteEntries.reduce((sum, e) => sum + e.count, 0);
+            const dailyAvg = total / siteEntries.length;
+
+            const last7 = siteEntries.slice(-7);
+            const last7DayAvg = last7.reduce((sum, e) => sum + e.count, 0) / last7.length;
+
+            const prev7 = siteEntries.slice(-14, -7);
+            const prev7Avg = prev7.length > 0 ? prev7.reduce((sum, e) => sum + e.count, 0) / prev7.length : last7DayAvg;
+            const trend = prev7Avg > 0 ? ((last7DayAvg - prev7Avg) / prev7Avg * 100) : 0;
+
+            return {
+                total,
+                dailyAvg: dailyAvg.toFixed(1),
+                last7DayAvg: last7DayAvg.toFixed(1),
+                daysTracked: siteEntries.length,
+                trend: trend.toFixed(1)
+            };
+        }
+
+        function calculatePresaleMetrics(site) {
+            const siteEntries = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (siteEntries.length === 0) {
+                return { totalMembers: 0, totalRevenue: 0, avgYield: 0, last7DayAvg: 0, daysTracked: 0, trend: 0, tierBreakdown: {} };
+            }
+
+            let totalMembers = 0;
+            let totalRevenue = 0;
+            let tierTotals = { bronze: 0, silver: 0, gold: 0, platinum: 0 };
+
+            siteEntries.forEach(e => {
+                totalMembers += getTotalMembers(e);
+                totalRevenue += calculateRevenue(e);
+                tiers.forEach(t => tierTotals[t] += (e[t] || 0));
+            });
+
+            const avgYield = totalMembers > 0 ? totalRevenue / totalMembers : 0;
+
+            const last7 = siteEntries.slice(-7);
+            const last7Members = last7.reduce((sum, e) => sum + getTotalMembers(e), 0);
+            const last7DayAvg = last7Members / last7.length;
+
+            const prev7 = siteEntries.slice(-14, -7);
+            const prev7Members = prev7.reduce((sum, e) => sum + getTotalMembers(e), 0);
+            const prev7Avg = prev7.length > 0 ? prev7Members / prev7.length : last7DayAvg;
+            const trend = prev7Avg > 0 ? ((last7DayAvg - prev7Avg) / prev7Avg * 100) : 0;
+
+            return {
+                totalMembers,
+                totalRevenue,
+                avgYield,
+                last7DayAvg: last7DayAvg.toFixed(1),
+                daysTracked: siteEntries.length,
+                trend: trend.toFixed(1),
+                tierBreakdown: tierTotals
+            };
+        }
+
+        function renderAll() {
+            renderDashboard();
+            renderWaitlistTab();
+            renderPresaleTab();
+            updateComparison();
+        }
+
+        function renderDashboard() {
+            const metricsContainer = document.getElementById('dashboardMetrics');
+            let html = '';
+
+            ['site1', 'site2', 'site3'].forEach(site => {
+                const wlMetrics = calculateWaitlistMetrics(site);
+                const psMetrics = calculatePresaleMetrics(site);
+                const wlTarget = data.targets[site]?.waitlist || 0;
+                const psTarget = data.targets[site]?.presale || 0;
+                const yieldTarget = data.targets[site]?.yield || 0;
+                const wlProgress = wlTarget > 0 ? (wlMetrics.total / wlTarget * 100) : 0;
+                const psProgress = psTarget > 0 ? (psMetrics.totalMembers / psTarget * 100) : 0;
+                const yieldProgress = yieldTarget > 0 ? (psMetrics.avgYield / yieldTarget * 100) : 0;
+                const wlBarWidth = Math.min(wlProgress, 100);
+                const psBarWidth = Math.min(psProgress, 100);
+                const yieldBarWidth = Math.min(yieldProgress, 100);
+
+                const siteDot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${siteColors[site].border};margin-right:6px;"></span>`;
+
+                html += `
+                    <div class="metric-card">
+                        <div class="metric-label">${siteDot}${getSiteName(site)} Waitlist</div>
+                        <div class="metric-value">${wlMetrics.total}</div>
+                        <div class="metric-subtext">Sign-ups ${wlTarget > 0 ? `(${wlProgress.toFixed(0)}% of ${wlTarget})` : ''}</div>
+                        ${wlTarget > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${wlBarWidth}%"></div></div>` : ''}
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">${getSiteName(site)} Presale</div>
+                        <div class="metric-value">${psMetrics.totalMembers}</div>
+                        <div class="metric-subtext">Members ${psTarget > 0 ? `(${psProgress.toFixed(0)}% of ${psTarget})` : ''}</div>
+                        ${psTarget > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${psBarWidth}%"></div></div>` : ''}
+                    </div>
+                    <div class="metric-card highlight">
+                        <div class="metric-label">${getSiteName(site)} Avg Yield</div>
+                        <div class="metric-value currency">${psMetrics.avgYield.toFixed(2)}</div>
+                        <div class="metric-subtext">${yieldTarget > 0 ? `${yieldProgress.toFixed(0)}% of £${yieldTarget.toFixed(2)} target` : 'Per member'}</div>
+                        ${yieldTarget > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${yieldBarWidth}%"></div></div>` : ''}
+                    </div>
+                `;
+            });
+
+            metricsContainer.innerHTML = html;
+            renderDashboardCharts();
+        }
+
+        function renderDashboardCharts() {
+            // Waitlist chart (by day number)
+            const wlCtx = document.getElementById('dashboardWaitlistChart').getContext('2d');
+            if (charts.dashboardWaitlist) charts.dashboardWaitlist.destroy();
+
+            const wlDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.waitlist.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                let cumulative = 0;
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map((e, i) => {
+                        cumulative += e.count;
+                        return { x: i + 1, y: cumulative };
+                    }),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: siteColors[site].bg,
+                    fill: true,
+                    tension: 0.3
+                };
+            });
+
+            charts.dashboardWaitlist = new Chart(wlCtx, {
+                type: 'line',
+                data: { datasets: wlDatasets },
+                options: getDayNumberChartOptions('Cumulative Sign-ups')
+            });
+
+            // Presale chart (by day number)
+            const psCtx = document.getElementById('dashboardPresaleChart').getContext('2d');
+            if (charts.dashboardPresale) charts.dashboardPresale.destroy();
+
+            const psDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                let cumulative = 0;
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map((e, i) => {
+                        cumulative += getTotalMembers(e);
+                        return { x: i + 1, y: cumulative };
+                    }),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: siteColors[site].bg,
+                    fill: true,
+                    tension: 0.3
+                };
+            });
+
+            charts.dashboardPresale = new Chart(psCtx, {
+                type: 'line',
+                data: { datasets: psDatasets },
+                options: getDayNumberChartOptions('Cumulative Members')
+            });
+
+            // Yield chart (by day number)
+            const yldCtx = document.getElementById('dashboardYieldChart').getContext('2d');
+            if (charts.dashboardYield) charts.dashboardYield.destroy();
+
+            const yldDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                let cumMembers = 0;
+                let cumRevenue = 0;
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map((e, i) => {
+                        cumMembers += getTotalMembers(e);
+                        cumRevenue += calculateRevenue(e);
+                        const avgYield = cumMembers > 0 ? cumRevenue / cumMembers : 0;
+                        return { x: i + 1, y: avgYield };
+                    }),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.3
+                };
+            });
+
+            charts.dashboardYield = new Chart(yldCtx, {
+                type: 'line',
+                data: { datasets: yldDatasets },
+                options: getDayNumberChartOptions('Average Yield (£)')
+            });
+        }
+
+        function renderWaitlistTab() {
+            const metricsContainer = document.getElementById('waitlistMetrics');
+            let html = '';
+
+            ['site1', 'site2', 'site3'].forEach(site => {
+                const metrics = calculateWaitlistMetrics(site);
+                const target = data.targets[site]?.waitlist || 0;
+                const progress = target > 0 ? (metrics.total / target * 100) : 0;
+                const daysToTarget = parseFloat(metrics.last7DayAvg) > 0 && target > metrics.total ?
+                    Math.ceil((target - metrics.total) / parseFloat(metrics.last7DayAvg)) : 0;
+
+                html += `
+                    <div class="metric-card">
+                        <div class="metric-label">${getSiteName(site)} - Total</div>
+                        <div class="metric-value">${metrics.total}</div>
+                        <div class="metric-subtext">${metrics.daysTracked} days tracked</div>
+                        ${target > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${Math.min(progress, 100)}%"></div></div>
+                        <div class="metric-subtext">${progress.toFixed(1)}% to target (${target})</div>` : ''}
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">${getSiteName(site)} - Daily Run Rate</div>
+                        <div class="metric-value">${metrics.last7DayAvg}</div>
+                        <div class="metric-subtext ${parseFloat(metrics.trend) >= 0 ? 'metric-positive' : 'metric-negative'}">
+                            ${parseFloat(metrics.trend) >= 0 ? '↑' : '↓'} ${Math.abs(parseFloat(metrics.trend))}% vs prev 7 days
+                        </div>
+                        ${daysToTarget > 0 ? `<div class="metric-subtext">${daysToTarget} days to target at current rate</div>` : ''}
+                    </div>
+                `;
+            });
+
+            metricsContainer.innerHTML = html;
+            renderWaitlistCharts();
+            renderWaitlistTable();
+        }
+
+        function renderWaitlistCharts() {
+            const dailyCtx = document.getElementById('waitlistDailyChart').getContext('2d');
+            if (charts.waitlistDaily) charts.waitlistDaily.destroy();
+
+            const dailyDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.waitlist.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map((e, i) => ({ x: i + 1, y: e.count })),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: siteColors[site].border,
+                    borderWidth: 2
+                };
+            });
+
+            charts.waitlistDaily = new Chart(dailyCtx, {
+                type: 'bar',
+                data: { datasets: dailyDatasets },
+                options: getDayNumberChartOptions('Daily Sign-ups')
+            });
+
+            const cumCtx = document.getElementById('waitlistCumulativeChart').getContext('2d');
+            if (charts.waitlistCumulative) charts.waitlistCumulative.destroy();
+
+            const cumDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.waitlist.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                let cumulative = 0;
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map((e, i) => {
+                        cumulative += e.count;
+                        return { x: i + 1, y: cumulative };
+                    }),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: siteColors[site].bg,
+                    fill: true,
+                    tension: 0.3
+                };
+            });
+
+            charts.waitlistCumulative = new Chart(cumCtx, {
+                type: 'line',
+                data: { datasets: cumDatasets },
+                options: getDayNumberChartOptions('Cumulative Total')
+            });
+        }
+
+        function renderWaitlistTable() {
+            const tbody = document.querySelector('#waitlistTable tbody');
+            const sortedData = [...data.waitlist].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            let html = '';
+            sortedData.forEach(entry => {
+                const siteData = data.waitlist.filter(e => e.site === entry.site && new Date(e.date) <= new Date(entry.date));
+                const cumulative = siteData.reduce((sum, e) => sum + e.count, 0);
+                const last7 = siteData.slice(-7);
+                const avg7 = (last7.reduce((sum, e) => sum + e.count, 0) / last7.length).toFixed(1);
+
+                html += `
+                    <tr>
+                        <td>${new Date(entry.date).toLocaleDateString('en-GB')}</td>
+                        <td><span class="site-badge ${entry.site}">${getSiteName(entry.site)}</span></td>
+                        <td>${entry.count}</td>
+                        <td>${cumulative}</td>
+                        <td>${avg7}</td>
+                        <td><button class="delete-btn" onclick="deleteEntry('waitlist', '${entry.date}', '${entry.site}')">Delete</button></td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center;opacity:0.6;">No data yet. Add your first entry above!</td></tr>';
+        }
+
+        function renderPresaleTab() {
+            const metricsContainer = document.getElementById('presaleMetrics');
+            let html = '';
+
+            ['site1', 'site2', 'site3'].forEach(site => {
+                const metrics = calculatePresaleMetrics(site);
+                const target = data.targets[site]?.presale || 0;
+                const yieldTarget = data.targets[site]?.yield || 0;
+                const progress = target > 0 ? (metrics.totalMembers / target * 100) : 0;
+                const yieldProgress = yieldTarget > 0 ? (metrics.avgYield / yieldTarget * 100) : 0;
+
+                html += `
+                    <div class="metric-card">
+                        <div class="metric-label">${getSiteName(site)} - Members</div>
+                        <div class="metric-value">${metrics.totalMembers}</div>
+                        <div class="metric-subtext">${metrics.daysTracked} days tracked</div>
+                        ${target > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${Math.min(progress, 100)}%"></div></div>
+                        <div class="metric-subtext">${progress.toFixed(1)}% to target (${target})</div>` : ''}
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">${getSiteName(site)} - Avg Yield</div>
+                        <div class="metric-value currency">${metrics.avgYield.toFixed(2)}</div>
+                        <div class="metric-subtext">${yieldTarget > 0 ? `${yieldProgress.toFixed(0)}% of £${yieldTarget.toFixed(2)} target` : 'Per member'}</div>
+                        ${yieldTarget > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${Math.min(yieldProgress, 100)}%"></div></div>` : ''}
+                        <div class="tier-colors">
+                            <span class="tier-badge tier-bronze">B: ${metrics.tierBreakdown.bronze || 0}</span>
+                            <span class="tier-badge tier-silver">S: ${metrics.tierBreakdown.silver || 0}</span>
+                            <span class="tier-badge tier-gold">G: ${metrics.tierBreakdown.gold || 0}</span>
+                            <span class="tier-badge tier-platinum">P: ${metrics.tierBreakdown.platinum || 0}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            metricsContainer.innerHTML = html;
+            renderPresaleCharts();
+            renderPresaleTable();
+        }
+
+        function renderPresaleCharts() {
+            const dailyCtx = document.getElementById('presaleDailyChart').getContext('2d');
+            if (charts.presaleDaily) charts.presaleDaily.destroy();
+
+            const dailyDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map(e => ({ x: e.date, y: getTotalMembers(e) })),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: siteColors[site].border,
+                    borderWidth: 2
+                };
+            });
+
+            charts.presaleDaily = new Chart(dailyCtx, {
+                type: 'bar',
+                data: { datasets: dailyDatasets },
+                options: getChartOptions('Daily Members')
+            });
+
+            const cumCtx = document.getElementById('presaleCumulativeChart').getContext('2d');
+            if (charts.presaleCumulative) charts.presaleCumulative.destroy();
+
+            const cumDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                let cumulative = 0;
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map(e => {
+                        cumulative += getTotalMembers(e);
+                        return { x: e.date, y: cumulative };
+                    }),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: siteColors[site].bg,
+                    fill: true,
+                    tension: 0.3
+                };
+            });
+
+            charts.presaleCumulative = new Chart(cumCtx, {
+                type: 'line',
+                data: { datasets: cumDatasets },
+                options: getChartOptions('Cumulative Members')
+            });
+
+            const rvCtx = document.getElementById('presaleRevenueChart').getContext('2d');
+            if (charts.presaleRevenue) charts.presaleRevenue.destroy();
+
+            const rvDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map(e => ({ x: e.date, y: calculateRevenue(e) })),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: siteColors[site].border,
+                    borderWidth: 2
+                };
+            });
+
+            charts.presaleRevenue = new Chart(rvCtx, {
+                type: 'bar',
+                data: { datasets: rvDatasets },
+                options: getChartOptions('Daily Revenue (£)')
+            });
+
+            const yldCtx = document.getElementById('presaleYieldChart').getContext('2d');
+            if (charts.presaleYield) charts.presaleYield.destroy();
+
+            const yldDatasets = ['site1', 'site2', 'site3'].map(site => {
+                const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                let cumMembers = 0;
+                let cumRevenue = 0;
+                return {
+                    label: getSiteName(site),
+                    data: siteData.map(e => {
+                        cumMembers += getTotalMembers(e);
+                        cumRevenue += calculateRevenue(e);
+                        return { x: e.date, y: cumMembers > 0 ? cumRevenue / cumMembers : 0 };
+                    }),
+                    borderColor: siteColors[site].border,
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.3
+                };
+            });
+
+            charts.presaleYield = new Chart(yldCtx, {
+                type: 'line',
+                data: { datasets: yldDatasets },
+                options: getChartOptions('Avg Yield (£)')
+            });
+        }
+
+        function renderPresaleTable() {
+            const tbody = document.querySelector('#presaleTable tbody');
+            const sortedData = [...data.presale].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            let html = '';
+            sortedData.forEach(entry => {
+                const total = getTotalMembers(entry);
+                const revenue = calculateRevenue(entry);
+                const avgYield = total > 0 ? (revenue / total).toFixed(2) : '0.00';
+
+                html += `
+                    <tr>
+                        <td>${new Date(entry.date).toLocaleDateString('en-GB')}</td>
+                        <td><span class="site-badge ${entry.site}">${getSiteName(entry.site)}</span></td>
+                        <td>${entry.bronze || 0}</td>
+                        <td>${entry.silver || 0}</td>
+                        <td>${entry.gold || 0}</td>
+                        <td>${entry.platinum || 0}</td>
+                        <td><strong>${total}</strong></td>
+                        <td>£${revenue.toFixed(2)}</td>
+                        <td>£${avgYield}</td>
+                        <td><button class="delete-btn" onclick="deleteEntry('presale', '${entry.date}', '${entry.site}')">Delete</button></td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="10" style="text-align:center;opacity:0.6;">No data yet. Add your first entry above!</td></tr>';
+        }
+
+        function updateComparison() {
+            const metric = document.getElementById('comparisonMetric').value;
+            const dayNum = parseInt(document.getElementById('comparisonDay').value) || 30;
+            document.getElementById('comparisonDayLabel').textContent = dayNum;
+
+            const siteProgress = {};
+
+            ['site1', 'site2', 'site3'].forEach(site => {
+                if (metric === 'waitlist') {
+                    const siteData = data.waitlist.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                    let cumulative = 0;
+                    siteProgress[site] = siteData.map((e, i) => {
+                        cumulative += e.count;
+                        return { day: i + 1, value: cumulative };
+                    });
+                } else if (metric === 'presale') {
+                    const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                    let cumulative = 0;
+                    siteProgress[site] = siteData.map((e, i) => {
+                        cumulative += getTotalMembers(e);
+                        return { day: i + 1, value: cumulative };
+                    });
+                } else if (metric === 'revenue') {
+                    const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                    let cumulative = 0;
+                    siteProgress[site] = siteData.map((e, i) => {
+                        cumulative += calculateRevenue(e);
+                        return { day: i + 1, value: cumulative };
+                    });
+                } else if (metric === 'yield') {
+                    const siteData = data.presale.filter(e => e.site === site).sort((a, b) => new Date(a.date) - new Date(b.date));
+                    let cumMembers = 0;
+                    let cumRevenue = 0;
+                    siteProgress[site] = siteData.map((e, i) => {
+                        cumMembers += getTotalMembers(e);
+                        cumRevenue += calculateRevenue(e);
+                        return { day: i + 1, value: cumMembers > 0 ? cumRevenue / cumMembers : 0 };
+                    });
+                }
+            });
+
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            if (charts.comparison) charts.comparison.destroy();
+
+            const datasets = ['site1', 'site2', 'site3'].map(site => ({
+                label: getSiteName(site),
+                data: siteProgress[site].map(p => ({ x: p.day, y: p.value })),
+                borderColor: siteColors[site].border,
+                backgroundColor: siteColors[site].bg,
+                fill: false,
+                tension: 0.3
+            }));
+
+            const yLabels = {
+                waitlist: 'Waitlist Sign-ups',
+                presale: 'Presale Members',
+                revenue: 'Revenue (£)',
+                yield: 'Average Yield (£)'
+            };
+
+            charts.comparison = new Chart(ctx, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: 'white' } }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: 'Day Number', color: 'white' },
+                            ticks: { color: 'rgba(255,255,255,0.7)' },
+                            grid: { color: 'rgba(255,255,255,0.1)' }
+                        },
+                        y: {
+                            title: { display: true, text: yLabels[metric], color: 'white' },
+                            ticks: { color: 'rgba(255,255,255,0.7)' },
+                            grid: { color: 'rgba(255,255,255,0.1)' }
+                        }
+                    }
+                }
+            });
+
+            const statsContainer = document.getElementById('comparisonStats');
+            let html = '';
+
+            ['site1', 'site2', 'site3'].forEach(site => {
+                const progress = siteProgress[site];
+                const atDay = progress.find(p => p.day === dayNum) || progress[progress.length - 1];
+                const totalDays = progress.length;
+                const valueAtDay = atDay ? atDay.value : 0;
+
+                const site1Progress = siteProgress.site1;
+                const site1AtDay = site1Progress.find(p => p.day === dayNum) || site1Progress[site1Progress.length - 1];
+                const site1Value = site1AtDay ? site1AtDay.value : 0;
+                const diff = site !== 'site1' && site1Value > 0 ? ((valueAtDay - site1Value) / site1Value * 100).toFixed(1) : 0;
+
+                const valueDisplay = metric === 'revenue' || metric === 'yield'
+                    ? `£${valueAtDay.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                    : valueAtDay.toLocaleString();
+
+                html += `
+                    <div class="comparison-row">
+                        <div class="site-name">
+                            <div class="site-indicator" style="background:${siteColors[site].border}"></div>
+                            <strong>${getSiteName(site)}</strong>
+                        </div>
+                        <div>
+                            <strong>${valueDisplay}</strong>
+                            <span style="opacity:0.7;margin-left:10px;">(Day ${Math.min(totalDays, dayNum)} of ${totalDays})</span>
+                            ${site !== 'site1' && site1Value > 0 ? `<span class="${diff >= 0 ? 'metric-positive' : 'metric-negative'}" style="margin-left:10px;">${diff >= 0 ? '+' : ''}${diff}% vs ${getSiteName('site1')}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            statsContainer.innerHTML = html || '<p style="opacity:0.6;">Add data to see comparison</p>';
+        }
+
+        function getChartOptions(yLabel) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: 'white' } }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: { unit: 'day', displayFormats: { day: 'dd MMM' } },
+                        ticks: { color: 'rgba(255,255,255,0.7)' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: yLabel, color: 'white' },
+                        ticks: { color: 'rgba(255,255,255,0.7)' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    }
+                }
+            };
+        }
+
+        function getDayNumberChartOptions(yLabel) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: 'white' } }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: { display: true, text: 'Day Number', color: 'white' },
+                        ticks: { color: 'rgba(255,255,255,0.7)' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: yLabel, color: 'white' },
+                        ticks: { color: 'rgba(255,255,255,0.7)' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    }
+                }
+            };
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cloud-nine-gym-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function exportCSV() {
+            let csv = 'Type,Date,Site,Bronze,Silver,Gold,Platinum,Total,Revenue,AvgYield\n';
+
+            data.waitlist.forEach(e => {
+                csv += `Waitlist,${e.date},${getSiteName(e.site)},,,,,${e.count},,\n`;
+            });
+
+            data.presale.forEach(e => {
+                const total = getTotalMembers(e);
+                const revenue = calculateRevenue(e);
+                const avgYield = total > 0 ? (revenue / total).toFixed(2) : '0.00';
+                csv += `Presale,${e.date},${getSiteName(e.site)},${e.bronze||0},${e.silver||0},${e.gold||0},${e.platinum||0},${total},${revenue.toFixed(2)},${avgYield}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cloud-nine-gym-data-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (imported.waitlist && imported.presale) {
+                            data = { ...data, ...imported };
+                            saveData();
+                            renderPricingInputs();
+                            loadTargets();
+                            loadSiteNames();
+                            loadPricing();
+                            renderAll();
+                            alert('Data imported successfully!');
+                        } else {
+                            alert('Invalid data format');
+                        }
+                    } catch (err) {
+                        alert('Error reading file: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to delete ALL data? This cannot be undone!')) {
+                if (confirm('Really delete everything?')) {
+                    data = {
+                        waitlist: [],
+                        presale: [],
+                        targets: {
+                            site1: { waitlist: 0, presale: 0, yield: 0 },
+                            site2: { waitlist: 0, presale: 0, yield: 0 },
+                            site3: { waitlist: 0, presale: 0, yield: 0 }
+                        },
+                        siteNames: { site1: 'Tonbridge', site2: 'Bromley', site3: 'Bethnal Green' },
+                        siteStatus: { site1: 'open', site2: 'preopening', site3: 'preopening' },
+                        pricing: {
+                            site1: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
+                            site2: { bronze: 0, silver: 0, gold: 0, platinum: 0 },
+                            site3: { bronze: 0, silver: 0, gold: 0, platinum: 0 }
+                        }
+                    };
+                    saveData();
+                    renderPricingInputs();
+                    loadTargets();
+                    loadSiteNames();
+                    loadPricing();
+                    renderAll();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
