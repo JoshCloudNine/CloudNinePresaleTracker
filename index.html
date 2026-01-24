@@ -1072,10 +1072,7 @@
 
         // Data storage
         let data = {
-            waitlist: [
-            {"date": "2026-01-23", "site": "site2", "count": 70},
-            {"date": "2026-01-23", "site": "site3", "count": 62}
-        ],
+            waitlist: [],
             presale: [],
             targets: {
                 site1: { waitlist: 2000, presale: 500, yield: 50 },
@@ -2120,10 +2117,7 @@
             if (confirm('Are you sure you want to delete ALL data? This cannot be undone!')) {
                 if (confirm('Really delete everything?')) {
                     data = {
-                        waitlist: [
-            {"date": "2026-01-23", "site": "site2", "count": 70},
-            {"date": "2026-01-23", "site": "site3", "count": 62}
-        ],
+                        waitlist: [],
                         presale: [],
                         targets: {
                             site1: { waitlist: 0, presale: 0, yield: 0 },
