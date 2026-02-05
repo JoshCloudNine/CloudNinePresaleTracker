@@ -1650,8 +1650,8 @@
                 const metrics = calculateWaitlistMetrics(site);
                 const target = data.targets[site]?.waitlist || 0;
                 const progress = target > 0 ? (metrics.total / target * 100) : 0;
-                const daysToTarget = parseFloat(metrics.last7DayAvg) > 0 && target > metrics.total ?
-                    Math.ceil((target - metrics.total) / parseFloat(metrics.last7DayAvg)) : 0;
+                const daysToTarget = parseFloat(metrics.dailyAvg) > 0 && target > metrics.total ?
+                    Math.ceil((target - metrics.total) / parseFloat(metrics.dailyAvg)) : 0;
 
                 html += `
                     <div class="metric-card">
@@ -1663,7 +1663,7 @@
                     </div>
                     <div class="metric-card">
                         <div class="metric-label">${getSiteName(site)} - Daily Run Rate</div>
-                        <div class="metric-value">${metrics.last7DayAvg}</div>
+                        <div class="metric-value">${metrics.dailyAvg}</div>
                         <div class="metric-subtext ${parseFloat(metrics.trend) >= 0 ? 'metric-positive' : 'metric-negative'}">
                             ${parseFloat(metrics.trend) >= 0 ? '↑' : '↓'} ${Math.abs(parseFloat(metrics.trend))}% vs prev 7 days
                         </div>
